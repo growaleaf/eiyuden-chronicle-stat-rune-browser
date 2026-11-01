@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eiyuden Chronicle: Hundred Heroes — Character Stat &amp; Rune-Lens Browser</title>
+<meta name="description" content="Compare Eiyuden Chronicle: Hundred Heroes character base stats and rune-lens slots side by side, plus a rune database, without tabbing between a dozen wiki pages.">
+<style>
+  :root {
+    --bg: #15131a;
+    --panel: #201d29;
+    --panel-border: #39334a;
+    --ink: #e7e3ee;
+    --ink-dim: #a39bb3;
+    --accent: #6f5fae;
+    --accent-bright: #a08ce8;
+    --field-bg: #0f0d14;
+    --warn: #c2874f;
+    --ok: #7fae8f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.55;
+  }
+  main { max-width: 1240px; margin: 0 auto; padding: 32px 20px 80px; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; border-bottom: 1px solid var(--panel-border); padding-bottom: 16px; }
+  .sub { color: var(--ink-dim); font-size: 0.93rem; margin: 0 0 20px; }
+  .callout {
+    font-size: 0.85rem; color: var(--ink-dim); background: var(--field-bg);
+    border: 1px solid var(--panel-border); border-radius: 4px; padding: 12px 14px; margin: 0 0 20px;
+  }
+  .callout strong { color: var(--ink); }
+  .callout.warn { border-color: var(--warn); }
+  section {
+    background: var(--panel); border: 1px solid var(--panel-border); border-radius: 6px;
+    padding: 20px 22px; margin-bottom: 20px;
+  }
+  section h2 { font-size: 1.1rem; margin: 0 0 6px; }
+  .section-note { color: var(--ink-dim); font-size: 0.85rem; margin: 0 0 16px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; align-items: center; }
+  .controls label { font-size: 0.78rem; color: var(--ink-dim); display: flex; align-items: center; gap: 6px; }
+  .controls select, .controls input[type="text"] {
+    background: var(--field-bg); color: var(--ink); border: 1px solid var(--panel-border);
+    border-radius: 4px; padding: 5px 8px; font-size: 0.82rem;
+  }
+  .level-tabs { display: flex; gap: 4px; }
+  .level-tabs button {
+    background: var(--field-bg); color: var(--ink-dim); border: 1px solid var(--panel-border);
+    border-radius: 4px; padding: 5px 12px; font-size: 0.8rem; cursor: pointer;
+  }
+  .level-tabs button.active { color: var(--accent-bright); border-color: var(--accent-bright); }
+  table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  table th, table td { border: 1px solid var(--panel-border); padding: 6px 8px; text-align: left; vertical-align: top; }
+  table th {
+    color: var(--ink-dim); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.02em;
+    background: var(--field-bg); white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  table th.sorted { color: var(--accent-bright); }
+  td.name { white-space: nowrap; font-weight: 600; cursor: pointer; }
+  td.name:hover { color: var(--accent-bright); }
+  td.num { text-align: right; white-space: nowrap; }
+  tr.selected { background: rgba(160, 140, 232, 0.12); }
+  tr.selected td.name { color: var(--accent-bright); }
+  .badge { display: inline-block; font-size: 0.68rem; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--panel-border); color: var(--ink-dim); }
+  .badge.nodata { border-color: var(--warn); color: var(--warn); }
+  .row-count { font-size: 0.78rem; color: var(--ink-dim); margin-left: auto; }
+  .detail-box { background: var(--field-bg); border: 1px solid var(--accent); border-radius: 6px; padding: 14px 16px; margin-top: 14px; font-size: 0.85rem; }
+  .detail-box h3 { margin: 0 0 8px; font-size: 1rem; color: var(--accent-bright); }
+  .detail-box table { margin-top: 6px; }
+  .gap-label { display: inline-block; font-size: 0.72rem; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--warn); color: var(--warn); margin-left: 6px; }
+  .sources-section { font-size: 0.82rem; color: var(--ink-dim); }
+  .sources-section h2 { font-size: 1.05rem; }
+  .sources-section a { color: var(--accent-bright); }
+  .self-test { font-size: 0.75rem; color: var(--ink-dim); margin-top: 10px; }
+  .self-test.ok { color: var(--accent-bright); }
+  .self-test.bad { color: var(--warn); }
+  footer { max-width: 1240px; margin: 0 auto; padding: 0 20px 40px; font-size: 0.8rem; color: var(--ink-dim); }
+  footer a { color: var(--accent-bright); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Eiyuden Chronicle: Hundred Heroes — Character Stat &amp; Rune-Lens Browser</h1>
+  <p class="sub">A side-by-side stat and rune-lens lookup for
+  <a href="https://eiyuden.wiki.gg/" target="_blank" rel="noopener">Eiyuden Chronicle: Hundred Heroes</a>,
+  built for comparing War Room roster picks without opening a dozen separate wiki tabs. This is a
+  lookup, not a ranking tool — no tier-list or superlative claims anywhere in the shipped copy.
+  Nothing here is saved or sent anywhere — it runs entirely in your browser.</p>
+
+  <div class="callout warn" id="dataNotice"></div>
+
+  <section>
+    <h2>Characters</h2>
+    <p class="section-note">17 of an estimated ~120 recruitable roster members, fetched and
+    verified directly against eiyuden.wiki.gg Gameplay pages (not guessed or padded — see Sources
+    below for the exact count and why it isn't the full roster). Click a name to see its full
+    rune-lens slot list below the table.</p>
+    <div class="controls">
+      <label>Search name
+        <input type="text" id="nameFilter" placeholder="e.g. Nowa, Seign…">
+      </label>
+      <label>Unit Type
+        <select id="typeFilter">
+          <option value="">All types</option>
+          <option value="Battle">Battle</option>
+          <option value="Hybrid">Hybrid</option>
+          <option value="Support">Support</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+      <label>Stat level
+        <span class="level-tabs" id="levelTabs">
+          <button type="button" data-level="lv1">Lv.1</button>
+          <button type="button" data-level="lv50" class="active">Lv.50</button>
+          <button type="button" data-level="lv99">Lv.99</button>
+        </span>
+      </label>
+      <span class="row-count" id="charRowCount"></span>
+    </div>
+    <table id="charTable">
+      <thead>
+        <tr>
+          <th data-sort="name">Name</th>
+          <th data-sort="unitType">Unit Type</th>
+          <th data-sort="HP">HP</th>
+          <th data-sort="MP">MP</th>
+          <th data-sort="PWR">PWR</th>
+          <th data-sort="MGC">MGC</th>
+          <th data-sort="DEX">DEX</th>
+          <th data-sort="SPD">SPD</th>
+          <th data-sort="PD">PD</th>
+          <th data-sort="MD">MD</th>
+          <th data-sort="LUK">LUK</th>
+          <th data-sort="slots">Rune-Lens Slots</th>
+        </tr>
+      </thead>
+      <tbody id="charBody"></tbody>
+    </table>
+    <div class="detail-box" id="charDetail"></div>
+  </section>
+
+  <section id="runesSection">
+    <h2>Rune database</h2>
+    <p class="section-note">All 179 runes across the four categories gamerguides.com actually
+    uses (Enhancement, Magic, Passive, Skill) — effect text quoted from the source. No rarity or
+    lens-slot-cost column exists on the source pages for these runes; that is disclosed below, not
+    guessed.</p>
+    <div class="controls">
+      <label>Search name or effect
+        <input type="text" id="runeFilter" placeholder="e.g. Ice Needle, resistance…">
+      </label>
+      <label>Category
+        <select id="categoryFilter">
+          <option value="">All categories</option>
+          <option value="Enhancement">Enhancement</option>
+          <option value="Magic">Magic</option>
+          <option value="Passive">Passive</option>
+          <option value="Skill">Skill</option>
+        </select>
+      </label>
+      <span class="row-count" id="runeRowCount"></span>
+    </div>
+    <table id="runeTable">
+      <thead>
+        <tr>
+          <th data-sort="name">Rune</th>
+          <th data-sort="category">Category</th>
+          <th>Effect (as sourced)</th>
+        </tr>
+      </thead>
+      <tbody id="runeBody"></tbody>
+    </table>
+  </section>
+
+  <section class="sources-section">
+    <h2>Sources &amp; disclosed gaps</h2>
+    <p>Fetched and read directly <span id="fetchedDate"></span>.</p>
+    <ul id="sourceList"></ul>
+    <p><strong>Disclosed gap — roster coverage:</strong> 17 of an estimated ~120 recruitable
+    characters are covered here (14 with full stats, 3 confirmed to have no combat data at
+    all)<span class="gap-label">partial</span>. The wiki's own Characters index page lists
+    roughly 150 names, but that count mixes in non-recruitable enemies/bosses (confirmed:
+    "Dead countess" is a Boss, "Narungarde" has only an Enemy subpage) and
+    <em>Eiyuden Chronicle: Rising</em>-exclusive names, so it is not a reliable recruitable-roster
+    count. The Recruitment guide page's own text implies a real total near 120.</p>
+    <p><strong>Disclosed gap — not every roster member has combat stats:</strong> Code L and
+    Kassius (Unit Type "Support") and Huang (Unit Type "Other") have Gameplay pages with no stat
+    table and no rune-lens table at all<span class="gap-label">not available</span> — recruiting
+    them unlocks a Headquarters facility or a support skill instead of a statted party
+    slot. They are listed in the table above with that role disclosed, not with blank or
+    zero stats standing in for missing data.</p>
+    <p><strong>Disclosed gap — rune rarity/slot-cost:</strong> the gamerguides.com rune database
+    has no rarity column and no lens-slot-type column for individual
+    runes<span class="gap-label">not available</span>. The rarity and slot-type information shown
+    above instead comes from each character's own rune-lens table, which states what a given
+    slot accepts (e.g. "Rare Status") — not what any specific rune universally costs.</p>
+    <p><strong>Disclosed oddity — duplicate rune name:</strong> the Skill rune database lists
+    "Rune of Skeleton King Flick" and "Rune of Summon Revenant Army" twice each, with different
+    effect text per entry. Both source rows are kept as-is rather than silently merged or
+    dropped.</p>
+    <p class="self-test" id="selfTest">running self-test…</p>
+  </section>
+</main>
+
+<footer>
+  Fan-made reference tool, unaffiliated with the developers of Eiyuden Chronicle: Hundred Heroes.
+  Character and rune data cross-checked directly against eiyuden.wiki.gg and gamerguides.com as of
+  2026-11-01. No account, no server, no data leaves your browser.
+</footer>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  "use strict";
+  var D = window.EIYUDEN_DATA;
+  var charFilters = { name: "", type: "", level: "lv50" };
+  var sortState = { table: "char", key: "name", dir: 1 };
+  var selectedChar = null;
+  var runeFilters = { text: "", category: "" };
+  var runeSortState = { key: "name", dir: 1 };
+
+  function textNode(tag, cls, text) {
+    var el = document.createElement(tag);
+    if (cls) el.className = cls;
+    if (text !== undefined && text !== null) el.textContent = text;
+    return el;
+  }
+
+  function slotCount(c) {
+    return c.runeLens ? c.runeLens.length : 0;
+  }
+
+  function charSortValue(c, key) {
+    if (key === "name") return c.name;
+    if (key === "unitType") return c.unitType;
+    if (key === "slots") return slotCount(c);
+    var lvl = c[charFilters.level];
+    return lvl ? lvl[key] : -1;
+  }
+
+  function matchesCharFilters(c) {
+    if (charFilters.type && c.unitType !== charFilters.type) return false;
+    if (charFilters.name && c.name.toLowerCase().indexOf(charFilters.name) === -1) return false;
+    return true;
+  }
+
+  function renderCharTable() {
+    var rows = D.CHARACTERS.filter(matchesCharFilters).slice();
+    rows.sort(function (a, b) {
+      var av = charSortValue(a, sortState.key), bv = charSortValue(b, sortState.key);
+      if (typeof av === "string") return av.localeCompare(bv) * sortState.dir;
+      return (av - bv) * sortState.dir;
+    });
+
+    var body = document.getElementById("charBody");
+    body.innerHTML = "";
+    rows.forEach(function (c) {
+      var tr = document.createElement("tr");
+      if (selectedChar === c.name) tr.className = "selected";
+
+      var nameTd = textNode("td", "name", c.name);
+      nameTd.addEventListener("click", function () {
+        selectedChar = (selectedChar === c.name) ? null : c.name;
+        renderCharTable();
+        renderCharDetail();
+      });
+      tr.appendChild(nameTd);
+      tr.appendChild(textNode("td", null, c.unitType));
+
+      if (c.hasCombatData) {
+        var lvl = c[charFilters.level];
+        D.STAT_KEYS.forEach(function (k) {
+          tr.appendChild(textNode("td", "num", String(lvl[k])));
+        });
+        tr.appendChild(textNode("td", "num", String(slotCount(c))));
+      } else {
+        D.STAT_KEYS.forEach(function () {
+          var td = document.createElement("td");
+          td.className = "num";
+          td.appendChild(textNode("span", "badge nodata", "no data"));
+          tr.appendChild(td);
+        });
+        tr.appendChild(textNode("td", "num", "0"));
+      }
+
+      body.appendChild(tr);
+    });
+
+    document.getElementById("charRowCount").textContent = rows.length + " of " + D.CHARACTERS.length + " characters";
+
+    var ths = document.querySelectorAll("#charTable thead th");
+    ths.forEach(function (th) {
+      th.classList.toggle("sorted", th.getAttribute("data-sort") === sortState.key);
+    });
+  }
+
+  function renderCharDetail() {
+    var box = document.getElementById("charDetail");
+    box.innerHTML = "";
+    if (!selectedChar) {
+      box.appendChild(textNode("p", null, "Click a character's name above to see its full rune-lens slot list here."));
+      return;
+    }
+    var c = D.CHARACTERS.filter(function (x) { return x.name === selectedChar; })[0];
+    box.appendChild(textNode("h3", null, c.name + " — rune-lens slots"));
+
+    if (!c.hasCombatData) {
+      box.appendChild(textNode("p", null, c.noDataNote));
+      return;
+    }
+    if (!c.runeLens || c.runeLens.length === 0) {
+      box.appendChild(textNode("p", null, "No rune-lens data available."));
+      return;
+    }
+
+    var table = document.createElement("table");
+    var thead = document.createElement("thead");
+    var htr = document.createElement("tr");
+    ["Release Level", "Slot Type", "Rarity", "Details"].forEach(function (h) {
+      htr.appendChild(textNode("th", null, h));
+    });
+    thead.appendChild(htr);
+    table.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    c.runeLens.forEach(function (slot) {
+      var tr = document.createElement("tr");
+      tr.appendChild(textNode("td", null, "Lv. " + slot.level));
+      tr.appendChild(textNode("td", null, slot.type));
+      tr.appendChild(textNode("td", null, slot.rarity));
+      tr.appendChild(textNode("td", null, slot.details));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    box.appendChild(table);
+
+    if (c.base) {
+      var baseP = textNode("p", null, null);
+      baseP.appendChild(document.createTextNode("Base row (distinct from Lv.1 on this character's source page): "));
+      baseP.appendChild(document.createTextNode(D.STAT_KEYS.map(function (k) { return k + " " + c.base[k]; }).join(", ")));
+      box.appendChild(baseP);
+    }
+  }
+
+  function matchesRuneFilters(r) {
+    if (runeFilters.category && r.category !== runeFilters.category) return false;
+    if (runeFilters.text) {
+      var hay = (r.name + " " + r.effect).toLowerCase();
+      if (hay.indexOf(runeFilters.text) === -1) return false;
+    }
+    return true;
+  }
+
+  function renderRuneTable() {
+    var rows = D.RUNES.filter(matchesRuneFilters).slice();
+    rows.sort(function (a, b) {
+      var av = a[runeSortState.key], bv = b[runeSortState.key];
+      return String(av).localeCompare(String(bv)) * runeSortState.dir;
+    });
+
+    var body = document.getElementById("runeBody");
+    body.innerHTML = "";
+    rows.forEach(function (r) {
+      var tr = document.createElement("tr");
+      tr.appendChild(textNode("td", "name", r.name));
+      tr.appendChild(textNode("td", null, r.category));
+      tr.appendChild(textNode("td", null, r.effect));
+      body.appendChild(tr);
+    });
+    document.getElementById("runeRowCount").textContent = rows.length + " of " + D.RUNES.length + " runes";
+
+    var ths = document.querySelectorAll("#runeTable thead th");
+    ths.forEach(function (th) {
+      th.classList.toggle("sorted", th.getAttribute("data-sort") === runeSortState.key);
+    });
+  }
+
+  document.getElementById("nameFilter").addEventListener("input", function (e) {
+    charFilters.name = e.target.value.toLowerCase();
+    renderCharTable();
+  });
+  document.getElementById("typeFilter").addEventListener("change", function (e) {
+    charFilters.type = e.target.value;
+    renderCharTable();
+  });
+  document.querySelectorAll("#levelTabs button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      charFilters.level = btn.getAttribute("data-level");
+      document.querySelectorAll("#levelTabs button").forEach(function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      renderCharTable();
+    });
+  });
+  document.querySelectorAll("#charTable thead th[data-sort]").forEach(function (th) {
+    th.addEventListener("click", function () {
+      var key = th.getAttribute("data-sort");
+      if (sortState.key === key) sortState.dir *= -1; else { sortState.key = key; sortState.dir = 1; }
+      renderCharTable();
+    });
+  });
+
+  document.getElementById("runeFilter").addEventListener("input", function (e) {
+    runeFilters.text = e.target.value.toLowerCase();
+    renderRuneTable();
+  });
+  document.getElementById("categoryFilter").addEventListener("change", function (e) {
+    runeFilters.category = e.target.value;
+    renderRuneTable();
+  });
+  document.querySelectorAll("#runeTable thead th[data-sort]").forEach(function (th) {
+    th.addEventListener("click", function () {
+      var key = th.getAttribute("data-sort");
+      if (runeSortState.key === key) runeSortState.dir *= -1; else { runeSortState.key = key; runeSortState.dir = 1; }
+      renderRuneTable();
+    });
+  });
+
+  var notice = document.getElementById("dataNotice");
+  notice.appendChild(textNode("strong", null, "Data notice: "));
+  notice.appendChild(document.createTextNode(
+    "character stats and rune-lens slots are transcribed directly from eiyuden.wiki.gg, not " +
+    "invented or inferred; the rune database is transcribed directly from gamerguides.com. " +
+    "17 of an estimated ~120 recruitable characters are covered — see Sources below for why."
+  ));
+
+  document.getElementById("fetchedDate").textContent = D.FETCHED;
+  var srcList = document.getElementById("sourceList");
+  D.SOURCES.forEach(function (s) {
+    var li = document.createElement("li");
+    var a = document.createElement("a");
+    a.href = s.url; a.target = "_blank"; a.rel = "noopener"; a.textContent = s.name;
+    li.appendChild(a);
+    srcList.appendChild(li);
+  });
+
+  renderCharTable();
+  renderCharDetail();
+  renderRuneTable();
+
+  (function selfTest() {
+    var el = document.getElementById("selfTest");
+    var pass = 0, total = 7;
+    if (D.CHARACTERS.length === 17) pass++;
+    if (D.CHARACTERS.filter(function (c) { return c.hasCombatData; }).length === 14) pass++;
+    if (D.RUNES.length === 179) pass++;
+    if (D.RUNES.filter(function (r) { return r.category === "Skill"; }).length === 67) pass++;
+    var nowa = D.CHARACTERS.filter(function (c) { return c.name === "Nowa"; })[0];
+    if (nowa && nowa.lv99.HP === 597) pass++;
+    var bannedWords = ["best", "optimal", "strongest", "guaranteed", "approved", "certified", "compliant", "safe", "s-tier", "meta"];
+    var visibleText = (document.querySelector("main").textContent + " " + document.querySelector("footer").textContent).toLowerCase();
+    if (bannedWords.every(function (bw) { return visibleText.indexOf(bw) === -1; })) pass++;
+    if (document.getElementById("charBody").children.length > 0 && document.getElementById("runeBody").children.length > 0) pass++;
+    el.textContent = "self-test: " + pass + "/" + total + " known-answer scenarios passed";
+    el.className = "self-test " + (pass === total ? "ok" : "bad");
+  })();
+})();
+</script>
+</body>
+</html>
